@@ -1,4 +1,5 @@
-e755ee9bd52671e658c2983ca46bd9239cc9f3d7af67dc8cbfe862773dc8a6dc  ./README.md
+536f06cd23ad8be57ecb4e6f598d6e221072c0875162f2eae25b45908d3a675e  ./.gitignore
+09dd1b3fc8694ee8a349a1a805ae1c7033b06779878c9fb1067df712d3829866  ./README.md
 9037302715c898cecce6ec026f8ef23a5e394abfb72c73c5202a780a4ba67edd  ./SOURCES.md
 8e30d8273add207d7c93dbf6eaaeed5f245b9caeb5fb03ab07c67ee8ddca846b  ./install-bao.sh
 a40728c06a3ae651704d51159ade4314f151b88b2ff4a3d6f5d1af1497ff341c  ./install-skill.sh
@@ -8,8 +9,9 @@ a97103e7f3e9bac7bdb5077405776db53f1122e9e06159f5aee5e662489d2d81  ./patches/fix-
 8696a9a106d0d2f57115a2ad3b92726fadffe126246306423e14998c7ad5cfb3  ./rotate-credential.sh
 f663bd7a82c5aa76fa5ef8385ea2d542ec2e77ef3f8bb23b993ed809b8a34ac7  ./setup-account.sh
 98c2ed9a22e946ed0e7c663329bd7b13617624395f312a998328b38b8932ec9f  ./skill/himalaya/SKILL.md
+57748675776110e970ef4e0c7b610d65e6741f2d9d033968c52bf1b8a955d28e  ./skill/himalaya/references/openbao.md
 3274ec3b93b03dacce1d38611d923869e3554e82833d10332dc0b64730243ad2  ./skill/himalaya/references/pgp.md
-d3a39bc0326dd8d601fbb52360cd2c84fd9d7630946886ddceff3f9aecf1a5c3  ./skill/himalaya/references/security.md
+827d3d365e2e45f8670385bec28856a8c11df37303b8c8f284711293840e84f6  ./skill/himalaya/references/security.md
 8c57f1b3ee2753e4d5af6152252850b58c5a4f495145e0fc374274c9ba3f7e76  ./skill/himalaya/scripts/pgp_send.py
 1e8950aec021e469b9ebbf991a64130517e9389696c5d95021123b0f6549e036  ./templates/account.generic.toml
 49468039468ae321f68c2ebcc30babb4b33647aaf5df40e613026e5e4b25db8d  ./tests/run-tests.sh

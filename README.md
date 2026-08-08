@@ -183,6 +183,8 @@ If your server uses a custom CA or mutual TLS, set the standard OpenBao variable
 
 Setup writes each credential as `bao kv put <path>/<entry> password=...` and generates `auth.cmd = "bao kv get -field=password <path>/<entry>"`. The default path prefix is `secret/mail/<account>`, with `imap` and `smtp` entries.
 
+Runtime details — auth, private CA, least-privilege policy, environment propagation, and token lifecycle — are in `skill/himalaya/references/openbao.md`.
+
 ### Rotation
 
 `./rotate-credential.sh <account> [imap|smtp|both]` rotates credentials in whichever backend the account uses (default `both`). Himalaya fetches credentials per connection, so the new value is picked up on the next mail operation:

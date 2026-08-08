@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# Editor / OS
+.DS_Store
+*.swp
+*~
+
+# ClawHub publish metadata
+.clawhub/
