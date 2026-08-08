@@ -57,7 +57,7 @@ This compiles the exact crates.io release `himalaya 1.2.0` with only:
 imap,smtp,pgp-gpg
 ```
 
-The default shell-command PGP backend is deliberately excluded.
+The default shell-command PGP backend is deliberately excluded. Dependencies are pinned by the crate's shipped `Cargo.lock`; the build runs `cargo update -p spin` first because that lock pins the yanked `spin 0.9.8`, and uses a rustup toolchain because the crate's pinned 1.82.0 cannot compile its own lock.
 
 ### 2. Install the OpenClaw workspace skill
 

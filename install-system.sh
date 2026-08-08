@@ -43,14 +43,31 @@ export PATH="$CARGO_HOME/bin:$PATH"
 cargo --version
 rustc --version
 
-# Build the exact crates.io release with GPGME instead of Himalaya's
-# shell-command PGP backend for message crypto. The `--locked` flag is
-# intentionally omitted: the crate's shipped Cargo.lock pins `spin 0.9.8`,
-# which is yanked on crates.io, so locked resolution fails. The himalaya
-# version itself stays pinned via --version, and the rustup toolchain above
-# guarantees a compiler new enough for whatever resolution lands.
-cargo install himalaya \
-  --version "$HIMALAYA_VERSION" \
+# Build from the pinned crates.io source with its shipped Cargo.lock. That
+# lock pins `spin 0.9.8`, which is yanked on crates.io, so a locked build
+# fails as-is while an unlocked build drifts onto API-incompatible versions.
+# The standard fix is cargo's own `cargo update -p spin`: it re-resolves just
+# that one package to a non-yanked release and rewrites the checksum itself,
+# leaving every other pinned version untouched.
+SRC_DIR="$CARGO_HOME_DIR/src/himalaya-${HIMALAYA_VERSION}"
+CRATE_ARCHIVE="$CARGO_HOME_DIR/himalaya-${HIMALAYA_VERSION}.crate"
+if [[ ! -f "$CRATE_ARCHIVE" ]]; then
+  curl --proto '=https' --tlsv1.2 -sSfL \
+    "https://static.crates.io/crates/himalaya/himalaya-${HIMALAYA_VERSION}.crate" \
+    -o "$CRATE_ARCHIVE"
+fi
+rm -rf "$SRC_DIR"
+mkdir -p "$CARGO_HOME_DIR/src"
+tar -xzf "$CRATE_ARCHIVE" -C "$CARGO_HOME_DIR/src"
+
+# Force the modern stable toolchain for every cargo step: the crate's
+# rust-toolchain.toml pins an older channel (1.82.0) that cannot compile the
+# lock's newer dependencies.
+export RUSTUP_TOOLCHAIN=stable
+(cd "$SRC_DIR" && cargo update -p spin)
+cargo install \
+  --path "$SRC_DIR" \
+  --locked \
   --root "$INSTALL_ROOT" \
   --force \
   --no-default-features \
