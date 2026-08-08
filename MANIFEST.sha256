@@ -1,7 +1,8 @@
-5b6eb3a97305a6c77e3720ab39b06103beaee3fddd28ef339ac846ed3e5069fd  ./README.md
+e755ee9bd52671e658c2983ca46bd9239cc9f3d7af67dc8cbfe862773dc8a6dc  ./README.md
 9037302715c898cecce6ec026f8ef23a5e394abfb72c73c5202a780a4ba67edd  ./SOURCES.md
+8e30d8273add207d7c93dbf6eaaeed5f245b9caeb5fb03ab07c67ee8ddca846b  ./install-bao.sh
 a40728c06a3ae651704d51159ade4314f151b88b2ff4a3d6f5d1af1497ff341c  ./install-skill.sh
-8d04877070020722f9ebb9ce1c5babf75cf048b30899ce45b49ba7fb15c351df  ./install-system.sh
+1e6d0cde5eea8be291155fd69d13e736dada564081ad196fd3052386bcad4c83  ./install-system.sh
 e30a8dad3c11b1b7071bab3c49e29554b62d1d78bf40a8ea2cea6ea6f5136ac9  ./make-manifest.sh
 a97103e7f3e9bac7bdb5077405776db53f1122e9e06159f5aee5e662489d2d81  ./patches/fix-1.2.0-await.py
 8696a9a106d0d2f57115a2ad3b92726fadffe126246306423e14998c7ad5cfb3  ./rotate-credential.sh
@@ -11,7 +12,7 @@ f663bd7a82c5aa76fa5ef8385ea2d542ec2e77ef3f8bb23b993ed809b8a34ac7  ./setup-accoun
 d3a39bc0326dd8d601fbb52360cd2c84fd9d7630946886ddceff3f9aecf1a5c3  ./skill/himalaya/references/security.md
 8c57f1b3ee2753e4d5af6152252850b58c5a4f495145e0fc374274c9ba3f7e76  ./skill/himalaya/scripts/pgp_send.py
 1e8950aec021e469b9ebbf991a64130517e9389696c5d95021123b0f6549e036  ./templates/account.generic.toml
-f87bea83c50759ffb88e241894f6c3b2cfb803ef3ac72cc9e354026b360de2ca  ./tests/run-tests.sh
+49468039468ae321f68c2ebcc30babb4b33647aaf5df40e613026e5e4b25db8d  ./tests/run-tests.sh
 606aa1b26da32abd0b1c1adc71f0ecc7084bef9f85781713bfd220fa757c93db  ./tests/test_patch.py
 a297cb5557eac30f5b9e4f43b3d6fd359ac057ac512b2404f1d0c85e93a2d9c1  ./tests/test_pgp_send.py
 392ea2c03dfd99616790fd788340763fbf4e042f64c8de10ebfdb351dd761203  ./tests/test_rotate.py

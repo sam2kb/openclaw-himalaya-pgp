@@ -8,7 +8,7 @@ cd "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/.."
 
 fail=0
 
-SCRIPTS=(install-system.sh install-skill.sh setup-account.sh verify.sh make-manifest.sh uninstall.sh rotate-credential.sh tests/run-tests.sh)
+SCRIPTS=(install-system.sh install-skill.sh install-bao.sh setup-account.sh verify.sh make-manifest.sh uninstall.sh rotate-credential.sh tests/run-tests.sh)
 
 echo "== bash syntax =="
 for s in "${SCRIPTS[@]}"; do

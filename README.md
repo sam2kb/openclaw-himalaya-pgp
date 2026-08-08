@@ -175,7 +175,7 @@ At setup you can store mail credentials in an existing OpenBao server instead of
 
 Requirements:
 
-- the `bao` client CLI installed and on PATH (the server is external; nothing is installed on the OpenClaw host)
+- the `bao` client CLI installed and on PATH — `sudo ./install-bao.sh` (the server is external; only the client is installed on the OpenClaw host)
 - `BAO_ADDR` set to your server, for example `https://vault.example.com:8200`
 - a usable token, for example after `bao login` (the CLI stores it in `~/.bao_token`, which is what lets Himalaya's non-interactive `auth.cmd` authenticate)
 
@@ -205,6 +205,7 @@ The bundled safe PGP sender intentionally handles plain-text message bodies only
 
 ```text
 install-system.sh              root: installs pinned Himalaya build + dependencies
+install-bao.sh                 root: installs the OpenBao client CLI (optional)
 patches/                       fail-closed upstream-bug patches (fix-1.2.0-await.py)
 install-skill.sh               user: installs workspace skill override
 setup-account.sh               user: credentials, IMAP/SMTP config, PGP identity
