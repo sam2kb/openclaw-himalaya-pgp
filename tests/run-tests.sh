@@ -20,7 +20,7 @@ for s in "${SCRIPTS[@]}"; do
 done
 
 echo "== python compile =="
-if python3 -m py_compile skill/himalaya/scripts/pgp_send.py tests/test_pgp_send.py tests/test_rotate.py; then
+if python3 -m py_compile skill/himalaya/scripts/pgp_send.py patches/fix-1.2.0-await.py tests/test_pgp_send.py tests/test_rotate.py tests/test_patch.py; then
   echo "ok: py_compile"
 else
   echo "FAIL: py_compile"; fail=1
@@ -34,7 +34,7 @@ else
 fi
 
 # unittest/py_compile leave bytecode behind; keep the tree clean.
-rm -rf tests/__pycache__ skill/himalaya/scripts/__pycache__
+rm -rf tests/__pycache__ skill/himalaya/scripts/__pycache__ patches/__pycache__
 
 echo "== stray bytecode =="
 STRAY="$(find . -path ./.git -prune -o -type d -name '__pycache__' -print -o -type f -name '*.pyc' -print)"

@@ -7,6 +7,7 @@ set -euo pipefail
 HIMALAYA_VERSION="1.2.0"
 INSTALL_ROOT="/opt/himalaya-${HIMALAYA_VERSION}"
 CARGO_HOME_DIR="/var/cache/openclaw-himalaya/cargo"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 if [[ ${EUID:-$(id -u)} -ne 0 ]]; then
   echo "ERROR: run this script as root: sudo ./install-system.sh" >&2
@@ -59,6 +60,10 @@ fi
 rm -rf "$SRC_DIR"
 mkdir -p "$CARGO_HOME_DIR/src"
 tar -xzf "$CRATE_ARCHIVE" -C "$CARGO_HOME_DIR/src"
+
+# The published 1.2.0 source has a leftover `.await` that does not compile
+# against its own lock (upstream bug). Apply our fail-closed patch.
+python3 "$SCRIPT_DIR/patches/fix-1.2.0-await.py" "$SRC_DIR/src/cli.rs"
 
 # Force the modern stable toolchain for every cargo step: the crate's
 # rust-toolchain.toml pins an older channel (1.82.0) that cannot compile the
