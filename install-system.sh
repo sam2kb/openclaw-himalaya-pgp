@@ -61,9 +61,9 @@ rm -rf "$SRC_DIR"
 mkdir -p "$CARGO_HOME_DIR/src"
 tar -xzf "$CRATE_ARCHIVE" -C "$CARGO_HOME_DIR/src"
 
-# The published 1.2.0 source has a leftover `.await` that does not compile
+# The published 1.2.0 source has leftover `.await`s that do not compile
 # against its own lock (upstream bug). Apply our fail-closed patch.
-python3 "$SCRIPT_DIR/patches/fix-1.2.0-await.py" "$SRC_DIR/src/cli.rs"
+python3 "$SCRIPT_DIR/patches/fix-1.2.0-await.py" "$SRC_DIR/src"
 
 # Force the modern stable toolchain for every cargo step: the crate's
 # rust-toolchain.toml pins an older channel (1.82.0) that cannot compile the
