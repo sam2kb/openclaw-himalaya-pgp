@@ -43,11 +43,14 @@ export PATH="$CARGO_HOME/bin:$PATH"
 cargo --version
 rustc --version
 
-# Build from the crates.io release pinned by Cargo.lock. We intentionally use
-# GPGME instead of Himalaya's shell-command PGP backend for message crypto.
+# Build the exact crates.io release with GPGME instead of Himalaya's
+# shell-command PGP backend for message crypto. The `--locked` flag is
+# intentionally omitted: the crate's shipped Cargo.lock pins `spin 0.9.8`,
+# which is yanked on crates.io, so locked resolution fails. The himalaya
+# version itself stays pinned via --version, and the rustup toolchain above
+# guarantees a compiler new enough for whatever resolution lands.
 cargo install himalaya \
   --version "$HIMALAYA_VERSION" \
-  --locked \
   --root "$INSTALL_ROOT" \
   --force \
   --no-default-features \
