@@ -2,15 +2,33 @@
 
 A hardened Debian setup for the **official OpenClaw Himalaya workflow**, with PGP/MIME and non-plaintext mail credentials.
 
+## What this is
+
+This bundle turns an [OpenClaw](https://github.com/openclaw/openclaw) agent into a secure IMAP/SMTP mail client by overriding OpenClaw's bundled `himalaya` skill with a hardened version. It installs a pinned Himalaya CLI, connects it to your mailbox with encrypted credential storage, adds PGP/MIME signing and encryption, and ships a guarded PGP send helper plus an offline test suite.
+
+It is an **override, not a fork**: the skill is installed at OpenClaw's highest-precedence location (`<workspace>/skills/himalaya`), shadowing the bundled skill without ever modifying it on disk. Remove the override and the stock skill comes back.
+
+## Why it exists
+
+OpenClaw's bundled Himalaya skill is intentionally minimal: it documents the v1 CLI surface but leaves credential handling to the user (its own example even shows a plaintext password inline) and has no PGP story. This bundle closes the gaps that matter in practice:
+
+- **No plaintext credentials.** Mail passwords are stored GPG-encrypted in `pass` (default) or in an existing OpenBao server, referenced from config by `auth.cmd`, and never written into `config.toml`.
+- **Real PGP/MIME.** Himalaya is built with GPGME bindings (`pgp-gpg`) so the agent can encrypt, sign, and verify mail through Himalaya — while private keys stay in the user's GnuPG keyring and never pass through the agent.
+- **Safe PGP sending.** `pgp_send.py` turns structured JSON into MML and hands it to Himalaya with `shell=False`, rejecting header/MML injection and pre-checking recipient keys. No shell command is ever built from message content.
+- **Version drift protection.** The official skill targets Himalaya v1 commands (`folder list`, `envelope list`, `message read`, `template send`), but Himalaya 2.x changed the CLI and moved composition to a separate `mml` tool. The bundle pins the known-compatible **1.2.0** line so the skill's commands and the installed binary always match.
+- **Guardrails.** Incoming mail is untrusted data: the skill requires confirmation before sends and bulk mutations, and never lets message content drive shell commands, key-trust changes, or config edits.
+
 ## What it installs
 
 - Himalaya **1.2.0**, pinned
 - IMAP + SMTP support
 - PGP through **GPGME bindings** (`pgp.type = "gpg"`), not shell PGP commands
 - GnuPG
-- `pass` for IMAP/SMTP credentials
+- `pass` (default) or OpenBao for IMAP/SMTP credentials
 - a workspace `himalaya` skill override adding PGP and stricter safety rules
 - a validated PGP send helper for OpenClaw
+- a credential rotation tool (`rotate-credential.sh`)
+- an offline test suite (`tests/`)
 
 The workspace override does **not** modify OpenClaw's bundled skill on disk. OpenClaw gives workspace skills higher precedence.
 
