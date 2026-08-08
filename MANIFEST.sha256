@@ -1,0 +1,11 @@
+4c48ec03e51f84533cd6b77de1f5f83c334e6abe5b3f459444ae0652780685ca  ./README.md
+9037302715c898cecce6ec026f8ef23a5e394abfb72c73c5202a780a4ba67edd  ./SOURCES.md
+a40728c06a3ae651704d51159ade4314f151b88b2ff4a3d6f5d1af1497ff341c  ./install-skill.sh
+92632e68abf01e16ecdc59531bebb9ee6fd4cf01fb5b0e346ae71de46ab4eaf6  ./install-system.sh
+943f87c943761c94a7a3b3d6950197de84caae7d4fafad07bc384e4215ac24cd  ./setup-account.sh
+76434bd46d6f4531ad47b01b936a05a44f6617f1e20ce8e3a77ee2fb6d948950  ./skill/himalaya/SKILL.md
+3274ec3b93b03dacce1d38611d923869e3554e82833d10332dc0b64730243ad2  ./skill/himalaya/references/pgp.md
+704769009f140edab5c9d8af284ac5b8695e3be6f3da3a59624c215949e365c2  ./skill/himalaya/references/security.md
+2695ea65e191d6fdd94bec1ecc67deb8cf03be8a461e7e26744a266f32a5e7b5  ./skill/himalaya/scripts/pgp_send.py
+8209d6efd4d2476f7846d7ef9e4408f2baedae93dcaaba112867921b037e9272  ./templates/account.generic.toml
+11b7ed5f471e254cc8acbf026b7bca4ecd0e3b09a0a93e8fdde979072cfacafe  ./verify.sh
