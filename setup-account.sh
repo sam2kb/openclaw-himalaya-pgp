@@ -53,8 +53,8 @@ case "$PROVIDER" in
     read -r -p "IMAP port [993]: " IMAP_PORT; IMAP_PORT="${IMAP_PORT:-993}"
     read -r -p "IMAP encryption [tls/start-tls/none] [tls]: " IMAP_ENC; IMAP_ENC="${IMAP_ENC:-tls}"
     read -r -p "SMTP host: " SMTP_HOST
-    read -r -p "SMTP port [587]: " SMTP_PORT; SMTP_PORT="${SMTP_PORT:-587}"
-    read -r -p "SMTP encryption [tls/start-tls/none] [start-tls]: " SMTP_ENC; SMTP_ENC="${SMTP_ENC:-start-tls}"
+    read -r -p "SMTP port [465]: " SMTP_PORT; SMTP_PORT="${SMTP_PORT:-465}"
+    read -r -p "SMTP encryption [tls/start-tls/none] [tls]: " SMTP_ENC; SMTP_ENC="${SMTP_ENC:-tls}"
     ;;
   2)
     IMAP_HOST="imap.gmail.com"; IMAP_PORT="993"; IMAP_ENC="tls"
