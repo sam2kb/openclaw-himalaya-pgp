@@ -25,7 +25,23 @@ apt-get install -y --no-install-recommends \
   libgpgme-dev gnupg2 pass python3
 
 mkdir -p "$INSTALL_ROOT" "$CARGO_HOME_DIR"
+
+# Debian's apt rustc is frequently too old for freshly resolved dependencies
+# (e.g. ar_archive_writer requires recent `let`-chain syntax), which breaks
+# `cargo install` for the pinned himalaya line. Install a modern stable
+# toolchain via rustup, self-contained under the bundle's own directories.
+export RUSTUP_HOME="$INSTALL_ROOT/rustup"
 export CARGO_HOME="$CARGO_HOME_DIR"
+if [[ ! -x "$CARGO_HOME/bin/cargo" ]]; then
+  echo "Installing rustup (minimal, stable toolchain)..."
+  RUSTUP_INIT="$(mktemp)"
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o "$RUSTUP_INIT"
+  sh "$RUSTUP_INIT" -y --profile minimal --default-toolchain stable
+  rm -f "$RUSTUP_INIT"
+fi
+export PATH="$CARGO_HOME/bin:$PATH"
+cargo --version
+rustc --version
 
 # Build from the crates.io release pinned by Cargo.lock. We intentionally use
 # GPGME instead of Himalaya's shell-command PGP backend for message crypto.
