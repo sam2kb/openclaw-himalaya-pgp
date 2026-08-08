@@ -8,7 +8,7 @@ cd "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/.."
 
 fail=0
 
-SCRIPTS=(install-system.sh install-skill.sh setup-account.sh verify.sh make-manifest.sh uninstall.sh tests/run-tests.sh)
+SCRIPTS=(install-system.sh install-skill.sh setup-account.sh verify.sh make-manifest.sh uninstall.sh rotate-credential.sh tests/run-tests.sh)
 
 echo "== bash syntax =="
 for s in "${SCRIPTS[@]}"; do
@@ -20,7 +20,7 @@ for s in "${SCRIPTS[@]}"; do
 done
 
 echo "== python compile =="
-if python3 -m py_compile skill/himalaya/scripts/pgp_send.py tests/test_pgp_send.py; then
+if python3 -m py_compile skill/himalaya/scripts/pgp_send.py tests/test_pgp_send.py tests/test_rotate.py; then
   echo "ok: py_compile"
 else
   echo "FAIL: py_compile"; fail=1

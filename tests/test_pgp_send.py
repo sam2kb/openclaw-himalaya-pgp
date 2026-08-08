@@ -278,6 +278,36 @@ class PgpSendTestCase(unittest.TestCase):
         })
         self.assert_rejected(proc, "not configured for the GPG backend")
 
+    def test_metadata_with_credential_fields_ok(self):
+        (self.meta_dir / "default.json").write_text(
+            json.dumps({
+                "account": "default", "email": "me@example.com",
+                "pgp_fingerprint": VALID_FP, "backend": "gpg",
+                "credential_source": "openbao", "credential_path": "secret/mail/default",
+            }),
+            encoding="utf-8",
+        )
+        proc = self.run_script({
+            "account": "default", "to": ["alice@example.com"],
+            "subject": "s", "body": "x",
+        })
+        self.assert_ok(proc)
+
+    def test_unsupported_credential_source_rejected(self):
+        (self.meta_dir / "default.json").write_text(
+            json.dumps({
+                "account": "default", "email": "me@example.com",
+                "pgp_fingerprint": VALID_FP, "backend": "gpg",
+                "credential_source": "weird", "credential_path": "x",
+            }),
+            encoding="utf-8",
+        )
+        proc = self.run_script({
+            "account": "default", "to": ["alice@example.com"],
+            "subject": "s", "body": "x",
+        })
+        self.assert_rejected(proc, "unsupported credential_source")
+
     def test_missing_metadata_rejected(self):
         (self.meta_dir / "default.json").unlink()
         proc = self.run_script({

@@ -72,7 +72,7 @@ The setup supports:
 - iCloud app-specific password
 - Proton Mail Bridge
 
-It finds an existing GPG secret key for the mailbox email address or lets you launch interactive GPG key creation. Mail credentials are written into a per-account `pass` subtree, not into Himalaya's TOML.
+It finds an existing GPG secret key for the mailbox email address or lets you launch interactive GPG key creation. Mail credentials are written into a per-account `pass` subtree (default) or an OpenBao KV store (optional), never into Himalaya's TOML.
 
 ### 4. Verify without sending mail
 
@@ -151,6 +151,30 @@ gpg --fingerprint alice@example.com
 
 Verify a new fingerprint through an appropriate independent channel before treating it as trusted.
 
+## OpenBao credential backend
+
+At setup you can store mail credentials in an existing OpenBao server instead of `pass` (choice 2). This bundle never installs or runs an OpenBao server — `bao` is used purely as a client CLI, connecting to whatever `BAO_ADDR` points to.
+
+Requirements:
+
+- the `bao` client CLI installed and on PATH (the server is external; nothing is installed on the OpenClaw host)
+- `BAO_ADDR` set to your server, for example `https://vault.example.com:8200`
+- a usable token, for example after `bao login` (the CLI stores it in `~/.bao_token`, which is what lets Himalaya's non-interactive `auth.cmd` authenticate)
+
+If your server uses a custom CA or mutual TLS, set the standard OpenBao variables (`BAO_CACERT`, `BAO_CLIENT_CERT`, `BAO_CLIENT_KEY`) — they are inherited by Himalaya and `rotate-credential.sh` because those tools run on the same host and user.
+
+Setup writes each credential as `bao kv put <path>/<entry> password=...` and generates `auth.cmd = "bao kv get -field=password <path>/<entry>"`. The default path prefix is `secret/mail/<account>`, with `imap` and `smtp` entries.
+
+### Rotation
+
+`./rotate-credential.sh <account> [imap|smtp|both]` rotates credentials in whichever backend the account uses (default `both`). Himalaya fetches credentials per connection, so the new value is picked up on the next mail operation:
+
+```bash
+./rotate-credential.sh default
+```
+
+Note: OpenBao `kv put` passes the new value as a command-line argument (briefly visible via `ps`); `pass` reads it from stdin. Prefer `pass` if that exposure is unacceptable.
+
 ## Headless/GPG-agent note
 
 If your private key has a passphrase, `pass`, signing, and decryption may need the GPG agent to be unlocked. This bundle does **not** weaken that by writing passwords or private-key passphrases to plaintext files.
@@ -168,6 +192,7 @@ setup-account.sh               user: credentials, IMAP/SMTP config, PGP identity
 verify.sh                      user: connectivity/security checks, sends nothing
 make-manifest.sh               dev: regenerates MANIFEST.sha256
 uninstall.sh                   user: removes system binary, workspace skill, and account data
+rotate-credential.sh           user: rotate mail credentials in pass or OpenBao
 tests/                         essential test suite (run tests/run-tests.sh)
 skill/himalaya/SKILL.md        OpenClaw skill
 skill/himalaya/scripts/        guarded PGP send helper

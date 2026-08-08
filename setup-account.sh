@@ -113,38 +113,82 @@ fi
 
 echo "PGP identity: $PGP_FP"
 
-# Use a per-account password-store subtree so adding another account does not
-# re-key unrelated pass entries.
-PASS_SUBTREE="openclaw-mail/$ACCOUNT"
-PASS_DIR="${PASSWORD_STORE_DIR:-$HOME/.password-store}/$PASS_SUBTREE"
-if [[ ! -f "$PASS_DIR/.gpg-id" ]]; then
-  pass init -p "$PASS_SUBTREE" "$PGP_FP"
-elif ! grep -Fq "$PGP_FP" "$PASS_DIR/.gpg-id"; then
-  echo "Existing pass subtree $PASS_SUBTREE is not initialized for key $PGP_FP." >&2
-  read -r -p "Add this key and re-encrypt the subtree now? [y/N]: " REINIT
-  if [[ "$REINIT" =~ ^[Yy]$ ]]; then
-    pass init -p "$PASS_SUBTREE" "$PGP_FP"
-  else
-    echo "ERROR: refusing to continue: the new PGP key could not read stored credentials." >&2
-    exit 1
+echo
+echo "Mail credential storage:"
+echo "  1) pass (default; GPG-encrypted, offline, host-local)"
+echo "  2) OpenBao (external KV store; centralized rotation)"
+read -r -p "Choice [1]: " CRED_STORE
+CRED_STORE="${CRED_STORE:-1}"
+case "$CRED_STORE" in
+  1)
+    CRED_SOURCE="pass"
+    CRED_PATH="openclaw-mail/$ACCOUNT"
+    ;;
+  2)
+    CRED_SOURCE="openbao"
+    if ! command -v bao >/dev/null 2>&1; then
+      echo "ERROR: 'bao' CLI not found. Install OpenBao first (see README)." >&2
+      exit 1
+    fi
+    if ! bao token lookup >/dev/null 2>&1; then
+      echo "ERROR: cannot reach/authenticate OpenBao at BAO_ADDR. Set BAO_ADDR (e.g. https://vault.example.com:8200) and log in ('bao login') first." >&2
+      exit 1
+    fi
+    read -r -p "OpenBao KV path prefix [secret/mail/$ACCOUNT]: " CRED_PATH
+    CRED_PATH="${CRED_PATH:-secret/mail/$ACCOUNT}"
+    if [[ ! "$CRED_PATH" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+      echo "ERROR: OpenBao path may contain letters, numbers, dots, hyphens, slashes, and underscores only." >&2
+      exit 1
+    fi
+    ;;
+  *) echo "ERROR: invalid credential storage choice" >&2; exit 1 ;;
+esac
+echo "Credential storage: $CRED_SOURCE ($CRED_PATH)"
+
+# pass: use a per-account subtree so adding another account does not re-key
+# unrelated entries, and ensure the subtree is decryptable by the chosen key.
+if [[ "$CRED_SOURCE" == "pass" ]]; then
+  PASS_DIR="${PASSWORD_STORE_DIR:-$HOME/.password-store}/$CRED_PATH"
+  if [[ ! -f "$PASS_DIR/.gpg-id" ]]; then
+    pass init -p "$CRED_PATH" "$PGP_FP"
+  elif ! grep -Fq "$PGP_FP" "$PASS_DIR/.gpg-id"; then
+    echo "Existing pass subtree $CRED_PATH is not initialized for key $PGP_FP." >&2
+    read -r -p "Add this key and re-encrypt the subtree now? [y/N]: " REINIT
+    if [[ "$REINIT" =~ ^[Yy]$ ]]; then
+      pass init -p "$CRED_PATH" "$PGP_FP"
+    else
+      echo "ERROR: refusing to continue: the new PGP key could not read stored credentials." >&2
+      exit 1
+    fi
   fi
 fi
 
-read -r -s -p "IMAP/app password (hidden): " IMAP_PASSWORD; echo
-if [[ -z "$IMAP_PASSWORD" ]]; then echo "ERROR: empty password" >&2; exit 1; fi
-printf '%s\n' "$IMAP_PASSWORD" | pass insert -m -f "$PASS_SUBTREE/imap" >/dev/null
-unset IMAP_PASSWORD
+store_credential() { # $1 = entry name (imap|smtp)
+  local name="$1"
+  read -r -s -p "Password for $name (hidden): " NEW_PW; echo
+  if [[ -z "$NEW_PW" ]]; then echo "ERROR: empty password" >&2; exit 1; fi
+  case "$CRED_SOURCE" in
+    pass)
+      # pass reads the value from stdin, so it never appears in argv/ps.
+      printf '%s\n' "$NEW_PW" | pass insert -m -f "$CRED_PATH/$name" >/dev/null
+      ;;
+    openbao)
+      # Standard OpenBao interface; the value is briefly visible in argv.
+      bao kv put "$CRED_PATH/$name" "password=$NEW_PW" >/dev/null
+      ;;
+  esac
+  unset NEW_PW
+}
+
+store_credential imap
 
 read -r -p "Use the same credential for SMTP? [Y/n]: " SAME_SMTP
 SAME_SMTP="${SAME_SMTP:-Y}"
 if [[ "$SAME_SMTP" =~ ^[Nn]$ ]]; then
-  read -r -s -p "SMTP password (hidden): " SMTP_PASSWORD; echo
-  if [[ -z "$SMTP_PASSWORD" ]]; then echo "ERROR: empty password" >&2; exit 1; fi
-  printf '%s\n' "$SMTP_PASSWORD" | pass insert -m -f "$PASS_SUBTREE/smtp" >/dev/null
-  unset SMTP_PASSWORD
-  SMTP_PASS_ENTRY="$PASS_SUBTREE/smtp"
+  store_credential smtp
+  SMTP_CRED_ENTRY="smtp"
 else
-  SMTP_PASS_ENTRY="$PASS_SUBTREE/imap"
+  SMTP_CRED_ENTRY="imap"
 fi
 
 CONFIG_DIR="$HOME/.config/himalaya"
@@ -189,24 +233,39 @@ E_SMTP_HOST="$(toml_escape "$SMTP_HOST")"
   printf 'backend.encryption.type = "%s"\n' "$IMAP_ENC"
   printf 'backend.login = "%s"\n' "$E_EMAIL"
   printf 'backend.auth.type = "password"\n'
-  printf 'backend.auth.cmd = "pass show %s/imap"\n\n' "$PASS_SUBTREE"
+  if [[ "$CRED_SOURCE" == "pass" ]]; then
+    printf 'backend.auth.cmd = "pass show %s/imap"\n\n' "$CRED_PATH"
+  else
+    printf 'backend.auth.cmd = "bao kv get -field=password %s/imap"\n\n' "$CRED_PATH"
+  fi
   printf 'message.send.backend.type = "smtp"\n'
   printf 'message.send.backend.host = "%s"\n' "$E_SMTP_HOST"
   printf 'message.send.backend.port = %s\n' "$SMTP_PORT"
   printf 'message.send.backend.encryption.type = "%s"\n' "$SMTP_ENC"
   printf 'message.send.backend.login = "%s"\n' "$E_EMAIL"
   printf 'message.send.backend.auth.type = "password"\n'
-  printf 'message.send.backend.auth.cmd = "pass show %s"\n' "$SMTP_PASS_ENTRY"
+  if [[ "$CRED_SOURCE" == "pass" ]]; then
+    printf 'message.send.backend.auth.cmd = "pass show %s/%s"\n' "$CRED_PATH" "$SMTP_CRED_ENTRY"
+  else
+    printf 'message.send.backend.auth.cmd = "bao kv get -field=password %s/%s"\n' "$CRED_PATH" "$SMTP_CRED_ENTRY"
+  fi
   printf 'message.send.save-copy = true\n\n'
   printf '# PGP/MIME via GPGME. No shell command receives message-controlled recipients.\n'
   printf 'pgp.type = "gpg"\n'
 } >> "$CONFIG"
 chmod 600 "$CONFIG"
 
-python3 - "$META_DIR/$ACCOUNT.json" "$ACCOUNT" "$EMAIL" "$PGP_FP" <<'PY'
+python3 - "$META_DIR/$ACCOUNT.json" "$ACCOUNT" "$EMAIL" "$PGP_FP" "$CRED_SOURCE" "$CRED_PATH" <<'PY'
 import json, os, sys
-path, account, email, fp = sys.argv[1:]
-data = {"account": account, "email": email, "pgp_fingerprint": fp, "backend": "gpg"}
+path, account, email, fp, cred_source, cred_path = sys.argv[1:]
+data = {
+    "account": account,
+    "email": email,
+    "pgp_fingerprint": fp,
+    "backend": "gpg",
+    "credential_source": cred_source,
+    "credential_path": cred_path,
+}
 with open(path, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=2)
 os.chmod(path, 0o600)
@@ -226,6 +285,6 @@ himalaya --account "$ACCOUNT" folder list
 echo
 echo "Account '$ACCOUNT' configured."
 echo "Config: $CONFIG"
-echo "Password store: $PASS_SUBTREE"
+echo "Credential storage: $CRED_SOURCE ($CRED_PATH)"
 echo "PGP key: $PGP_FP"
 echo "Next: ./verify.sh $ACCOUNT"

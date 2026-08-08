@@ -115,7 +115,7 @@ Require confirmation before delete, purge, moving many messages, or any bulk mut
 
 ## Credential policy
 
-IMAP/SMTP passwords are retrieved with a fixed `pass show ...` command from Himalaya config. Never print, log, summarize, or test credentials by echoing them. If credential retrieval fails because the GPG agent is locked, report that it needs operator unlock rather than changing the config to plaintext.
+IMAP/SMTP passwords are retrieved with a fixed `auth.cmd` from Himalaya config (a `pass show ...` or `bao kv get ...` command, depending on the credential backend chosen at setup). Never print, log, summarize, or test credentials by echoing them. If credential retrieval fails because the GPG agent is locked or the OpenBao token is unavailable, report that it needs operator action rather than changing the config to plaintext.
 
 ## Attachments
 

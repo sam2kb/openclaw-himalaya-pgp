@@ -15,16 +15,23 @@ readarray -t INFO < <(python3 - "$META" <<'PY'
 import json,sys
 x=json.load(open(sys.argv[1],encoding='utf-8'))
 print(x['email']); print(x['pgp_fingerprint'])
+print(x.get('credential_source','pass')); print(x.get('credential_path',''))
 PY
 )
 EMAIL="${INFO[0]}"; FP="${INFO[1]}"
+CRED_SOURCE="${INFO[2]}"; CRED_PATH="${INFO[3]}"
+if [[ -z "$CRED_PATH" ]]; then CRED_PATH="openclaw-mail/$ACCOUNT"; fi
 
 echo "Account: $ACCOUNT ($EMAIL)"
 gpg --batch --list-secret-keys "$FP" >/dev/null
-pass show "openclaw-mail/$ACCOUNT/imap" >/dev/null
+case "$CRED_SOURCE" in
+  pass)    pass show "$CRED_PATH/imap" >/dev/null ;;
+  openbao) bao kv get -field=password "$CRED_PATH/imap" >/dev/null ;;
+  *) echo "ERROR: unsupported credential_source '$CRED_SOURCE'" >&2; exit 1 ;;
+esac
 
 echo "GPG secret key: OK ($FP)"
-echo "Credential retrieval: OK"
+echo "Credential retrieval: OK ($CRED_SOURCE)"
 
 echo "IMAP folder listing:"
 himalaya --account "$ACCOUNT" folder list

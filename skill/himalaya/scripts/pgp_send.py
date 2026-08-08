@@ -67,6 +67,9 @@ def load_metadata(account: str) -> dict:
         die("account metadata mismatch")
     if data.get("backend") != "gpg":
         die("account is not configured for the GPG backend")
+    cred_source = data.get("credential_source")
+    if cred_source is not None and cred_source not in ("pass", "openbao"):
+        die(f"unsupported credential_source: {cred_source!r}")
     clean_address(data.get("email"))
     return data
 

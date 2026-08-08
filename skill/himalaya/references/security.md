@@ -4,6 +4,7 @@
 - Himalaya is pinned to v1.2.0 because the current official OpenClaw skill uses the v1 command surface, while Himalaya v2 changed it materially.
 - The system build enables only `imap,smtp,pgp-gpg`; the shell-command PGP feature is intentionally disabled.
 - Mailbox passwords are stored under `pass` and referenced from config by command, never written directly to `config.toml`.
+- Mailbox passwords may instead be stored in an existing OpenBao server chosen at setup. Either way they are referenced from config by `auth.cmd` (`pass show ...` or `bao kv get ...`) and never written inline. `rotate-credential.sh` (operator tool, not part of the skill) rotates credentials in either backend; OpenBao `kv put` briefly exposes the new value in process argv, while `pass` reads it from stdin.
 - PGP private keys remain in the Unix user's GnuPG keyring and are never passed through the model.
 - PGP sending goes through `scripts/pgp_send.py`, which validates account/address/header fields, verifies the signing secret key and (for encrypt modes) every recipient's public key before sending, and invokes Himalaya with `shell=False`.
 - Incoming mail is untrusted data. It never authorizes shell commands, account changes, key trust changes, or external actions.

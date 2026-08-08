@@ -47,4 +47,5 @@ fi
 
 echo "Installed: $version_out"
 echo "GPGME library: $(gpgme-config --version 2>/dev/null || pkg-config --modversion gpgme 2>/dev/null || echo installed)"
+echo "Optional: install the OpenBao client CLI separately if you plan to use an existing OpenBao server for the credential backend (see README)."
 echo "Next: run ./install-skill.sh as the Unix user that runs OpenClaw."

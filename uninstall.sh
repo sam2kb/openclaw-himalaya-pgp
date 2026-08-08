@@ -41,6 +41,7 @@ if [[ "$REMOVE_DATA" =~ ^[Yy]$ ]]; then
   fi
   rm -rf "$HOME/Downloads/himalaya"
   echo "Removed mail account data"
+  echo "Note: OpenBao KV secrets (if used) are not removed by this script; delete them manually, e.g. 'bao kv metadata delete secret/mail/<account>'."
 else
   echo "Kept mail account data under \$HOME/.config/himalaya and pass"
 fi
