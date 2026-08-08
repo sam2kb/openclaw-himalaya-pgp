@@ -2,7 +2,9 @@
 """Safe PGP/MIME sender for the OpenClaw Himalaya skill.
 
 Input is JSON on stdin. The script validates all header-controlled fields,
-constructs MML in memory, and invokes Himalaya without a shell.
+checks that the signing key and (for encryption) every recipient's public
+key are available, constructs MML in memory, and invokes Himalaya without
+a shell.
 
 Example:
   printf '%s' '{"account":"default","to":["alice@example.com"],"subject":"Hi","body":"Secret"}' \
@@ -53,6 +55,8 @@ def clean_address_list(value: object, field: str, required: bool = False) -> lis
 
 def load_metadata(account: str) -> dict:
     path = Path.home() / ".config" / "himalaya" / "openclaw-pgp" / f"{account}.json"
+    if path.is_symlink():
+        die(f"account metadata must not be a symlink: {path}")
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError:
@@ -65,6 +69,40 @@ def load_metadata(account: str) -> dict:
         die("account is not configured for the GPG backend")
     clean_address(data.get("email"))
     return data
+
+
+def check_signing_key(fingerprint: str) -> None:
+    """Fail fast if the configured secret key is not usable for signing."""
+    if not fingerprint:
+        die("account metadata has no pgp_fingerprint; rerun setup-account.sh")
+    proc = subprocess.run(
+        ["gpg", "--batch", "--list-secret-keys", fingerprint],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        shell=False,
+    )
+    if proc.returncode != 0:
+        die(
+            f"signing secret key {fingerprint} is not available to this user; "
+            "unlock the GPG agent or rerun setup-account.sh"
+        )
+
+
+def check_recipient_keys(recipients: list[str]) -> None:
+    """Fail fast if any recipient has no public key for encrypt modes."""
+    for recipient in recipients:
+        proc = subprocess.run(
+            ["gpg", "--batch", "--list-keys", recipient],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            shell=False,
+        )
+        if proc.returncode != 0:
+            die(
+                f"no public key found for {recipient}; locate it first, e.g. "
+                f"gpg --auto-key-locate local,wkd --locate-keys {recipient}, "
+                "and verify its fingerprint before sending"
+            )
 
 
 def main() -> int:
@@ -91,8 +129,8 @@ def main() -> int:
     subject = payload.get("subject")
     if not isinstance(subject, str) or not subject or len(subject) > 300:
         die("subject must be a non-empty string up to 300 characters")
-    if "\r" in subject or "\n" in subject:
-        die("subject may not contain CR/LF")
+    if any(ord(c) < 0x20 or ord(c) == 0x7F for c in subject):
+        die("subject may not contain control characters")
 
     body = payload.get("body")
     if not isinstance(body, str) or len(body.encode("utf-8")) > 1024 * 1024:
@@ -104,6 +142,13 @@ def main() -> int:
     mode = payload.get("mode", "encrypt-sign")
     if mode not in MODES:
         die(f"mode must be one of: {', '.join(MODES)}")
+
+    # Fail fast before invoking Himalaya. Dry-run checks these too, so a dry
+    # run is a faithful test of everything except the actual send.
+    if "sign" in MODES[mode]:
+        check_signing_key(meta.get("pgp_fingerprint") or "")
+    if "encrypt" in MODES[mode]:
+        check_recipient_keys(to + cc)
 
     headers = [
         f"From: {sender}",
@@ -122,16 +167,23 @@ def main() -> int:
 
     env = os.environ.copy()
     env.setdefault("RUST_LOG", "warn")
-    proc = subprocess.run(
-        ["himalaya", "--account", account, "template", "send"],
-        input=mml,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        shell=False,
-        timeout=120,
-    )
+    try:
+        proc = subprocess.run(
+            ["himalaya", "--account", account, "template", "send"],
+            input=mml,
+            encoding="utf-8",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=env,
+            shell=False,
+            timeout=120,
+        )
+    except FileNotFoundError:
+        die("himalaya binary not found on PATH")
+    except subprocess.TimeoutExpired:
+        die("himalaya timed out after 120s; check IMAP/SMTP connectivity")
+    except OSError as exc:
+        die(f"failed to run himalaya: {exc}")
     if proc.stdout:
         sys.stdout.write(proc.stdout)
     if proc.stderr:

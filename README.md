@@ -90,6 +90,26 @@ openclaw gateway restart
 
 Or start a fresh session so the updated skill snapshot is loaded.
 
+### 6. Test the bundle (sends nothing)
+
+```bash
+./tests/run-tests.sh
+```
+
+Runs bash syntax checks, the `pgp_send.py` validation battery (with fake keys), and confirms `MANIFEST.sha256` is in sync. After editing any tracked file, regenerate the manifest:
+
+```bash
+./make-manifest.sh
+```
+
+### 7. Uninstall
+
+```bash
+./uninstall.sh
+```
+
+Removes the system binary, the workspace skill override, and (with confirmation) the mail accounts, `pass` subtree, and downloads directory. Your GPG keyring is never touched.
+
 ## PGP send helper
 
 OpenClaw is instructed to use:
@@ -110,7 +130,7 @@ printf '%s' '{
 }' | python3 ~/.openclaw/workspace/skills/himalaya/scripts/pgp_send.py --dry-run
 ```
 
-Remove `--dry-run` to send after you have verified the recipient's public key.
+`--dry-run` validates the full pipeline, including key availability, without sending anything. The helper fails fast with an actionable message if your signing key is unavailable or (for encrypt modes) a recipient has no public key.
 
 Supported modes:
 
@@ -146,6 +166,9 @@ install-system.sh              root: installs pinned Himalaya build + dependenci
 install-skill.sh               user: installs workspace skill override
 setup-account.sh               user: credentials, IMAP/SMTP config, PGP identity
 verify.sh                      user: connectivity/security checks, sends nothing
+make-manifest.sh               dev: regenerates MANIFEST.sha256
+uninstall.sh                   user: removes system binary, workspace skill, and account data
+tests/                         essential test suite (run tests/run-tests.sh)
 skill/himalaya/SKILL.md        OpenClaw skill
 skill/himalaya/scripts/        guarded PGP send helper
 skill/himalaya/references/     security + PGP notes

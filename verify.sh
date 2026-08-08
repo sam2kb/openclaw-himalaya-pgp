@@ -38,6 +38,13 @@ SCRIPT="$HOME/.openclaw/workspace/skills/himalaya/scripts/pgp_send.py"
 if [[ -f "$SCRIPT" ]]; then
   python3 -m py_compile "$SCRIPT"
   echo "PGP send helper syntax: OK"
+  echo "PGP send helper dry-run:"
+  if printf '%s' "{\"account\":\"$ACCOUNT\",\"to\":[\"$EMAIL\"],\"subject\":\"verify-dry-run\",\"body\":\"configuration and validation check\"}" \
+      | "$SCRIPT" --dry-run >/dev/null; then
+    echo "OK"
+  else
+    echo "WARNING: pgp_send.py dry-run failed; the error above explains why (missing key or locked GPG agent are common)." >&2
+  fi
 else
   echo "WARNING: workspace PGP helper not found at $SCRIPT" >&2
 fi

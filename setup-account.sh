@@ -31,8 +31,8 @@ fi
 
 read -r -p "Display name [${EMAIL%%@*}]: " DISPLAY_NAME
 DISPLAY_NAME="${DISPLAY_NAME:-${EMAIL%%@*}}"
-if [[ "$DISPLAY_NAME" == *$'\n'* || "$DISPLAY_NAME" == *$'\r'* ]]; then
-  echo "ERROR: invalid display name." >&2
+if [[ "$DISPLAY_NAME" =~ [^[:print:]] ]]; then
+  echo "ERROR: display name may contain printable characters only." >&2
   exit 1
 fi
 
@@ -73,6 +73,14 @@ case "$PROVIDER" in
   *) echo "ERROR: invalid provider choice" >&2; exit 1 ;;
 esac
 
+# Hosts are written inside TOML strings, so whitespace/control characters
+# would silently corrupt the config. Accept conservative hostname/IPv4/IPv6
+# syntax only.
+HOST_RE='^[A-Za-z0-9.:_-]+$'
+for h in "$IMAP_HOST" "$SMTP_HOST"; do
+  [[ "$h" =~ $HOST_RE ]] || { echo "ERROR: invalid host '$h'" >&2; exit 1; }
+done
+
 for p in "$IMAP_PORT" "$SMTP_PORT"; do
   [[ "$p" =~ ^[0-9]+$ ]] && (( p >= 1 && p <= 65535 )) || { echo "ERROR: invalid port $p" >&2; exit 1; }
 done
@@ -111,6 +119,15 @@ PASS_SUBTREE="openclaw-mail/$ACCOUNT"
 PASS_DIR="${PASSWORD_STORE_DIR:-$HOME/.password-store}/$PASS_SUBTREE"
 if [[ ! -f "$PASS_DIR/.gpg-id" ]]; then
   pass init -p "$PASS_SUBTREE" "$PGP_FP"
+elif ! grep -Fq "$PGP_FP" "$PASS_DIR/.gpg-id"; then
+  echo "Existing pass subtree $PASS_SUBTREE is not initialized for key $PGP_FP." >&2
+  read -r -p "Add this key and re-encrypt the subtree now? [y/N]: " REINIT
+  if [[ "$REINIT" =~ ^[Yy]$ ]]; then
+    pass init -p "$PASS_SUBTREE" "$PGP_FP"
+  else
+    echo "ERROR: refusing to continue: the new PGP key could not read stored credentials." >&2
+    exit 1
+  fi
 fi
 
 read -r -s -p "IMAP/app password (hidden): " IMAP_PASSWORD; echo
