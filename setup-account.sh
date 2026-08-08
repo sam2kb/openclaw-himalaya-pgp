@@ -88,14 +88,17 @@ for e in "$IMAP_ENC" "$SMTP_ENC"; do
   [[ "$e" == "tls" || "$e" == "start-tls" || "$e" == "none" ]] || { echo "ERROR: invalid encryption type $e" >&2; exit 1; }
 done
 
-# Select the PGP identity used for signing/decryption.
-PGP_FP="$(gpg --batch --with-colons --list-secret-keys "$EMAIL" 2>/dev/null | awk -F: '$1=="fpr"{print $10; exit}')"
+# Select the PGP identity used for signing/decryption. The `|| true` keeps the
+# lookup from tripping `set -euo pipefail` when gpg finds no secret key (exit
+# 2) — otherwise the script would abort silently instead of offering key
+# creation.
+PGP_FP="$(gpg --batch --with-colons --list-secret-keys "$EMAIL" 2>/dev/null | awk -F: '$1=="fpr"{print $10; exit}' || true)"
 if [[ -z "$PGP_FP" ]]; then
   echo "No secret GPG key found for $EMAIL."
   read -r -p "Launch interactive 'gpg --full-generate-key' now? [y/N]: " MAKE_KEY
   if [[ "$MAKE_KEY" =~ ^[Yy]$ ]]; then
     gpg --full-generate-key
-    PGP_FP="$(gpg --batch --with-colons --list-secret-keys "$EMAIL" 2>/dev/null | awk -F: '$1=="fpr"{print $10; exit}')"
+    PGP_FP="$(gpg --batch --with-colons --list-secret-keys "$EMAIL" 2>/dev/null | awk -F: '$1=="fpr"{print $10; exit}' || true)"
   fi
 fi
 if [[ -z "$PGP_FP" ]]; then
